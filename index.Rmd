@@ -1,104 +1,52 @@
 ---
-title: "Practical Machine Learing - excercise"
+title: "Statistical model that predicts shoe size given person tallness"
 author: "Rafal Szota"
-date: "Saturday, October 24, 2015"
-output: html_document
+date: "November 22, 2015"
+output: ioslides_presentation
 ---
 
-In this report I describe the exercises for Practical Machine Learning in the specialization. The training data comes from devices which collect a large amount of data about personal activity. In particular there are five types of barbell lifts exercises (denominated as A, B, C, D and E). The goal of the model is to predict with highest possible accuracy the type of exercise for unseen sample.
+## Model overview
 
+This application is based on very simple linear model that correlates person tallness with their shoe size.
 
-##Data cleaing
+- The input person tallness is done in centimeters
+- Resulting shoe size is predicted according to European standards  
+- Prediction uses linear regression fitted to 100 examples
+- Future model extensions could consider sex as predictor to increase accuracy
 
-Dataset for this exercise is downloaded from: [http://groupware.les.inf.puc-rio.br/har](http://groupware.les.inf.puc-rio.br/har). Original data is already divided in training and testing set. The data presents a relatively high number of unknown values (NA) for several features.
+## Sample Data 1/2
 
+Data for the model is availible in GitHub. <http://http://rafalszota.github.io/>.
 
-```{r, cache=TRUE, echo=FALSE}
-setwd("C:/Users/rszota/Documents/moje/study/repo/ML")
-test <- read.csv("pml-testing.csv")
-sample <- read.csv("pml-training.csv")
-library(randomForest)
-library(e1071)
-library(caret)
+```{r, echo=FALSE}
+data <- read.csv("data.txt") 
 ```
 
 ```{r}
-summary(sample)
-``` 
-
-In particular we can observe, that many features have 19216 not available values. Sample size is 19622, such, which implies that these features contain information for only 2% of all observation. Given such low coefficient I decided to remove them from the model.
-
-In particular we can observe, that many features have 19216 not available values. Sample size is 19622, such, which implies that these features contain information for only 2% of all observation. Given such low coefficient I decided to remove them from the model.
-
-In addition several columns has values determined as #DIV/0!. These features seems to be a numeric variables, however R interprets them as factor. We can observe that these are variables: skewness_, kurtosis_, amplitude_yaw_, max_yaw, min_yaw_. 
-An inspection of these variables shows that they bring very little information gain (in terms of observations with data), so I decide remove them from the model, rather than creating a strategy to extrapolate.
-Finally initial variables of the sample are just information on time, and person doing the exercise, which is not relevant for prediction. 
-
-Summing up  above knowledge, I consider fitting several models according to the following features:
-
-```{r, echo=FALSE, cache=TRUE}
-columns<-read.csv("columns.csv")
-columns <- as.vector(columns[, 1])
-sample <- sample[, columns]
-test <- test[,c(columns[-53],"problem_id")]
-columns
-``` 
-
-##Cross validation data
-
-Available data is divided into training and testing data. Since, cross validation  set is not provided I construct it from folding a training set.  I assign original train set to variable sample and divide in proportion of 80:20.
-
-```{r, cache=TRUE}
-testIndex <- createDataPartition(sample$classe, p=0.2, list=FALSE)
-train <- sample[-testIndex,]
-cv <- sample[testIndex,]
+summary(data)
 ```
+
+
+## Sample Data 2/2
+
+```{r, echo=FALSE}
+plot(data$height, data$footsize,
+     ylab="Shoe size (EU)",
+     xlab="Tallness in centimeters",
+     main="Correlation between tallness and shoe size")
+
+```
+
+
+## Prediction model
+
+
+The prediction model uses regression line with the following paremeters fitted:
+
 ```{r}
-nrow(train)
-nrow(cv)
-``` 
-##The model
-
-Given that the presented problem is classification,  I decided to contrast two most powerful ML models that were discussed on the class lecture. First of them is Random Forest and the second is Support Vector Machine.
-
-I also decided to apply as a predictors all available features, that remained after data cleaning. This means, I evaluated both models on the same common formula:
-
-```{r, cache=TRUE}
-formula <- classe ~ .
-``` 
-
-Applying package randomForest, I have constructed the model with 50 trees, and with no need to normalize vote counts. I also construct a model for SVM using package e1071. 
-
-```{r, cache=TRUE}
-fit.rf <- randomForest(formula, train, ntree=50, norm.votes=FALSE)
-fit.svm <- svm(formula, train)
-``` 
-I made predictions on cross validation model and try to estimate out-of-sample error.
-
-####Random Forest
-
-```{r, cache=TRUE}
-answers.rf <- predict(fit.rf, cv)
-confusionMatrix(answers.rf, cv$classe)
-``` 
-
-We observe overall accuracy of **99.64%**
-
-####Support Vector Machines
-
-```{r, cache=TRUE}
-answers.svm <- predict(fit.svm, cv)
-confusionMatrix(answers.svm, cv$classe)
-``` 
-
-We observe overall accuracy of **94.53%**
-
-##Final submission
-
-Given a comparison between both models, we observe that random forest has better accuracy. Thus, for my submission, I decided to choose this model to produce final sumbission.
-
-```{r, cache=TRUE}
-result <- predict(fit.rf, test)
-result
-``` 
-
+lm(data$footsize ~ data$height)
+```
+Predictions are rounded to the nearest half using the following formula:
+```{r, results=F, eval=FALSE}
+0.5 * round(predictedValue * 0.5)
+```
