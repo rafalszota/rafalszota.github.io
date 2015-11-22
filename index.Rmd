@@ -16,7 +16,7 @@ This application is based on very simple linear model that correlates person tal
 
 ## Sample Data 1/2
 
-Data for the model is availible in GitHub. <http://http://rafalszota.github.io/>.
+Data for the model is availible in data.txt file in GitHub repository. <https://github.com/rafalszota/rafalszota.github.io/>.
 
 ```{r, echo=FALSE}
 data <- read.csv("data.txt") 
